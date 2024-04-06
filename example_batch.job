@@ -1,0 +1,35 @@
+#!/bin/bash -l
+#SBATCH --account=mul-tra
+#SBATCH --job-name=job-name-here
+#SBATCH --nodes=2
+#SBATCH --partition=booster
+#SBATCH --ntasks-per-node=5
+#SBATCH --time=0:05:00
+#SBATCH --output=slurm_out_%j.txt
+#SBATCH --error=slurm_err_%j.txt
+#SBATCH --gres=gpu:4
+
+
+# module load MODULES-LIST-HERE
+
+module load Stages/2024  GCC/12.3.0 OpenMPI/4.1.5
+
+# some further GPU/CUDA inits/exports could be added here
+
+gcc get_cpu.c
+mpicc basic_mpi_program.c -o basic_mpi_program
+
+srun --exact --ntasks 1 --ntasks-per-node 1 -c 1 --mem 4G --nodes 1 --output energy_out_%j.txt --error energy_err_%j.txt \
+     --gres none sh sense_power_gpu.sh &
+
+#srun --exact --ntasks 8 --ntasks-per-node 4 -c 1 --mem 92G --output mpi_out_%j.txt --error mpi_err_%j.txt \
+#     --gres gpu:4 sh sample.sh &
+
+srun --exact --ntasks 8 --ntasks-per-node 4 -c 1 --mem 92G --output mpi_out_%j.txt --error mpi_err_%j.txt \
+     --gres gpu:4 basic_mpi_program &
+
+PID=`echo $!`
+wait $PID
+
+rm a.out
+rm basic_mpi_program
