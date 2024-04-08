@@ -3,7 +3,7 @@
 #SBATCH --job-name=job-name-here
 #SBATCH --nodes=2
 #SBATCH --partition=booster
-#SBATCH --ntasks-per-node=5
+#SBATCH --ntasks-per-node=6
 #SBATCH --time=0:05:00
 #SBATCH --output=slurm_out_%j.txt
 #SBATCH --error=slurm_err_%j.txt
@@ -19,14 +19,17 @@ module load Stages/2024  GCC/12.3.0 OpenMPI/4.1.5
 gcc get_cpu.c
 mpicc basic_mpi_program.c -o basic_mpi_program
 
-srun --exact --ntasks 1 --ntasks-per-node 1 -c 1 --mem 4G --nodes 1 --output energy_out_%j.txt --error energy_err_%j.txt \
+srun --exact --ntasks 1 --ntasks-per-node 1 -c 1 --mem 2G --nodes 1 --output gpu_energy_out_%j.txt --error gpu_energy_err_%j.txt \
      --gres none sh sense_power_gpu.sh &
+
+srun --exact --ntasks 1 --ntasks-per-node 1 -c 1 --mem 2G --nodes 1 --output total_energy_out_%j.txt --error total_energy_err_%j.txt \
+     --gres none sh sense_power_total.sh &
 
 #srun --exact --ntasks 8 --ntasks-per-node 4 -c 1 --mem 92G --output mpi_out_%j.txt --error mpi_err_%j.txt \
 #     --gres gpu:4 sh sample.sh &
 
 srun --exact --ntasks 8 --ntasks-per-node 4 -c 1 --mem 92G --output mpi_out_%j.txt --error mpi_err_%j.txt \
-     --gres gpu:4 basic_mpi_program &
+     --gres gpu:4 basic_mpi_program 1 &
 
 PID=`echo $!`
 wait $PID
